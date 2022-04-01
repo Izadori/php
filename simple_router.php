@@ -2,38 +2,6 @@
 
 require_once __DIR__."/traits.php";
 
-/*
-["PHP_SELF"]=> string(20) "/index.php/dashboard"
-["PATH_INFO"]=> string(10) "/dashboard"
-["SCRIPT_NAME"]=> string(10) "/index.php"
-["REQUEST_URI"]=> string(25) "/dashboard?state=category"
-
-
-'PATH_INFO'（無い場合あり）
-実際のスクリプトファイル名とクエリ文字列の間にある、クライアントが提供するパス名情報。
-たとえば、現在のスクリプトに http://www.example.com/php/path_info.php/some/stuff?foo=bar
-という URL でアクセスしていた場合の $_SERVER['PATH_INFO'] は /some/stuff となります。
-
-'REQUEST_URI'
-ページにアクセスするために指定された URI。例えば、 '/index.html'
-
-
-["PHP_SELF"]=> string(20) "/md_editor/index.php"
-["PATH_INFO"]=> undefined
-["SCRIPT_NAME"]=> string(20) "/md_editor/index.php"
-["REQUEST_URI"]=> string(11) "/md_editor/"
-
-必要なこと
-・ベースURLの取得
-  →SCRIPT_NAMEとREQUEST_URIの前方共通部分がベースURL
-  →スーパーグローバル変数として定義
-・正しいルーティングの実施
-  →ベースURLがREQUEST_URIに含まれることを考慮する。
-  →評価前にREQUEST_URIを除去しておく必要あり
-・パラメータの取得
-  →Laravelライクに指定する"/user/{id}", "/user/{name?}"に対応
-*/
-
 class SimpleRouter
 {
   // View管理用トレイトの追加
@@ -127,15 +95,16 @@ class SimpleRouter
       $varName[$route]  = $this->getParamName($route_tmp);
 //      print("+ "); var_dump($varName); print("<br>\n");
 
-      $route_tmp = preg_replace("/\{[^\}]+}/", "([^\\/]+)", $route_tmp);
+      $route_tmp = preg_replace("/\{[^\}\?]+}/", "([^\\/]+)", $route_tmp);
+      $route_tmp = preg_replace("/\{[^\}]+\?}/", "([^\\/]+)?", $route_tmp);
       $pattern = '/^'.$base_tmp.$route_tmp.'(.*)$/';
 
       if(preg_match($pattern, $uri, $matches)) {
-
+/*
         print("route: {$route}<br>\n");
         print("pattern: {$pattern}<br>\n");
         print("uri: {$uri}<br>\n");
-
+*/
         for($i = 1; $i < sizeof($matches) - 1; $i++){
 //          print("matched: {$matches[$i]}<br>\n");
           $varParam[$route][$i-1] = $matches[$i];
@@ -186,7 +155,8 @@ class SimpleRouter
 
         $param = [];
         for($i = 0; $i < sizeof($varParam[$longest_uri]); $i++){
-          $param[$varName[$longest_uri][$i]] = $varParam[$longest_uri][$i];
+          $varNameTmp = preg_replace("/\?$/", "", $varName[$longest_uri][$i]);
+          $param[$varNameTmp] = $varParam[$longest_uri][$i];
         }
 //        print("? "); var_dump($param); print("<br>\n");
 
@@ -202,7 +172,8 @@ class SimpleRouter
 
         $param = [];
         for($i = 0; $i < sizeof($varParam[$longest_uri]); $i++){
-          $param[$varName[$longest_uri][$i]] = $varParam[$longest_uri][$i];
+          $varNameTmp = preg_replace("/\?$/", "", $varName[$longest_uri][$i]);
+          $param[$varNameTmp] = $varParam[$longest_uri][$i];
         }
 //        print("? "); var_dump($param); print("<br>\n");
 
