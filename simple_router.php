@@ -127,7 +127,8 @@ class SimpleRouter
       $varName[$route]  = $this->getParamName($route_tmp);
 //      print("+ "); var_dump($varName); print("<br>\n");
 
-      $route_tmp = preg_replace("/\{[^\}]+}/", "([^\\/]+)", $route_tmp);
+      $route_tmp = preg_replace("/\{[^\}\?]+}/", "([^\\/]+)", $route_tmp);
+      $route_tmp = preg_replace("/\{[^\}]+\?}/", "([^\\/]+)?", $route_tmp);
       $pattern = '/^'.$base_tmp.$route_tmp.'(.*)$/';
 
       if(preg_match($pattern, $uri, $matches)) {
@@ -155,11 +156,11 @@ class SimpleRouter
         $longest_uri = $route;
       }
     }
-/*
+
     print("uri:{$uri}<br>\n");
     print("path:{$path}<br>\n");
     print("longest uri: {$longest_uri}<br>\n");
-*/
+
     // 最長一致URIが"/"の時、$uriと異なれば404を返す
     if($longest_uri ==="/" && $longest_uri !== $path) {
       header('HTTP/1.1 404 Not Found');
@@ -186,7 +187,8 @@ class SimpleRouter
 
         $param = [];
         for($i = 0; $i < sizeof($varParam[$longest_uri]); $i++){
-          $param[$varName[$longest_uri][$i]] = $varParam[$longest_uri][$i];
+          $varNameTmp = preg_replace("/\?$/", "", $varName[$longest_uri][$i]);
+          $param[$varNameTmp] = $varParam[$longest_uri][$i];
         }
 //        print("? "); var_dump($param); print("<br>\n");
 
@@ -202,7 +204,8 @@ class SimpleRouter
 
         $param = [];
         for($i = 0; $i < sizeof($varParam[$longest_uri]); $i++){
-          $param[$varName[$longest_uri][$i]] = $varParam[$longest_uri][$i];
+          $varNameTmp = preg_replace("/\?$/", "", $varName[$longest_uri][$i]);
+          $param[$varNameTmp] = $varParam[$longest_uri][$i];
         }
 //        print("? "); var_dump($param); print("<br>\n");
 
