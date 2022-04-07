@@ -27,9 +27,14 @@ class SimpleRouter
     // SCRIPT_NAMEからファイル名([^\/]+\.php)を探索する
     // その前の部分がベースURLになる
     $baseURL = "";
-    preg_match("/\/[^\/]+\.php/", $_SERVER['SCRIPT_NAME'], $matches);
+    $scriptName = $_SERVER['SCRIPT_NAME'];
+    if(!preg_match("/\/[^\/]+\.php/", $scriptName, $matches)){
+      $scriptName .= "index.php";
+    }
+
+    preg_match("/\/[^\/]+\.php/", $scriptName, $matches);
 //    print("<br>\n"); var_dump($matches); print("<br>\n");
-    $baseURL = substr($_SERVER['SCRIPT_NAME'], 0, strpos($_SERVER['SCRIPT_NAME'], $matches[0]));
+    $baseURL = substr($scriptName, 0, strpos($scriptName, $matches[0]));
 
     if(strlen($baseURL) != 0) {
       $GLOBALS['BASE_URL'] = $baseURL;
@@ -144,7 +149,7 @@ class SimpleRouter
           $varNameTmp = preg_replace("/\?$/", "", $varName[$longest_uri][$i]);
           $param[$varNameTmp] = $varParam[$longest_uri][$i];
         }
-//        print("? "); var_dump($param); print("<br>\n");
+//        print("?1 "); var_dump($param); print("<br>\n");
 
         call_user_func_array($f, $param);
         $run = true;
@@ -161,7 +166,7 @@ class SimpleRouter
           $varNameTmp = preg_replace("/\?$/", "", $varName[$longest_uri][$i]);
           $param[$varNameTmp] = $varParam[$longest_uri][$i];
         }
-//        print("? "); var_dump($param); print("<br>\n");
+//        print("?2 "); var_dump($param); print("<br>\n");
 
         call_user_func_array($f, $param);
         $run = true;
