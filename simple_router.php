@@ -45,9 +45,9 @@ class SimpleRouter
     // スクリプトファイル名とベースURLを除去する
     $uri = preg_replace("/[^\/]+\.php/", "", $_SERVER['REQUEST_URI']);
     $uriPattern = "/".preg_replace("/\//", "\\/", $GLOBALS['BASE_URL'])."/";
-    var_dump($uriPattern); print("<br>\n");
+//    var_dump($uriPattern); print("<br>\n");
     $uri = preg_replace($uriPattern, "", $uri);
-    var_dump($uri); print("<br>\n");
+//    var_dump($uri); print("<br>\n");
 
     // routetListから'route'が最大一致の関数を実行する
     self::getInstance()->callFunctions($uri);
