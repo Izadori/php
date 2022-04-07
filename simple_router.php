@@ -24,20 +24,15 @@ class SimpleRouter
   private function __construct()
   {
     // ベースURLの抽出
+    // SCRIPT_NAMEからファイル名([^\/]+\.php)を探索する
+    // その前の部分がベースURLになる
     $baseURL = "";
-    $minLength = min(strlen($_SERVER['REQUEST_URI']), strlen($_SERVER['SCRIPT_NAME']));
-
-    for($i = 0; $i < $minLength; $i++) {
-      if($_SERVER['REQUEST_URI'][$i] === $_SERVER['SCRIPT_NAME'][$i]){
-        $baseURL .= $_SERVER['REQUEST_URI'][$i];
-      }
-      else{
-        break;
-      }
-    }
+    preg_match("/\/[^\/]+\.php/", $_SERVER['SCRIPT_NAME'], $matches);
+//    print("<br>\n"); var_dump($matches); print("<br>\n");
+    $baseURL = substr($_SERVER['SCRIPT_NAME'], 0, strpos($_SERVER['SCRIPT_NAME'], $matches[0]));
 
     if(strlen($baseURL) != 0) {
-      $GLOBALS['BASE_URL'] = substr($baseURL, 0, strlen($baseURL) - 1);
+      $GLOBALS['BASE_URL'] = $baseURL;
     }
     else{
       $GLOBALS['BASE_URL'] = "";
@@ -47,8 +42,15 @@ class SimpleRouter
 
   public function __destruct()
   {
-    // get/postListから'route'が最大一致の関数を実行する
-    self::getInstance()->callFunctions($_SERVER['REQUEST_URI']);
+    // スクリプトファイル名とベースURLを除去する
+    $uri = preg_replace("/[^\/]+\.php/", "", $_SERVER['REQUEST_URI']);
+    $uriPattern = "/".preg_replace("/\//", "\\/", $GLOBALS['BASE_URL'])."/";
+    var_dump($uriPattern); print("<br>\n");
+    $uri = preg_replace($uriPattern, "", $uri);
+    var_dump($uri); print("<br>\n");
+
+    // routetListから'route'が最大一致の関数を実行する
+    self::getInstance()->callFunctions($uri);
   }
 
   static private function getInstance(): SimpleRouter
@@ -79,10 +81,7 @@ class SimpleRouter
   // ルーティングに従って関数の呼び出し
   private function callFunctions(string  $uri) : void
   {
-    $base_tmp = preg_replace("/([\\/\\,\\.\\-\\~\\^])/", "\\\\$1", $GLOBALS['BASE_URL']);
-    $pattern = '/^'.$base_tmp.'(\/[^\?]*)\??.*$'.'/';
-    preg_match($pattern, $uri, $matches);
-    $path = $matches[1];
+    $path = $uri;
     $matched = array();
     $varName  = array();
     $varParam = array();
@@ -97,7 +96,7 @@ class SimpleRouter
 
       $route_tmp = preg_replace("/\{[^\}\?]+}/", "([^\\/]+)", $route_tmp);
       $route_tmp = preg_replace("/\{[^\}]+\?}/", "([^\\/]+)?", $route_tmp);
-      $pattern = '/^'.$base_tmp.$route_tmp.'(.*)$/';
+      $pattern = '/^'.$route_tmp.'(.*)$/';
 
       if(preg_match($pattern, $uri, $matches)) {
 /*
@@ -129,19 +128,6 @@ class SimpleRouter
     print("path:{$path}<br>\n");
     print("longest uri: {$longest_uri}<br>\n");
 */
-    // 最長一致URIが"/"の時、$uriと異なれば404を返す
-    if($longest_uri ==="/" && $longest_uri !== $path) {
-      header('HTTP/1.1 404 Not Found');
-
-      if(self::$file404 !== ""){
-        include self::$file404;
-      }
-      else{
-        self::getInstance()->show404();
-      }
-
-      exit();
-    }
 
     $script_name = $_SERVER['SCRIPT_NAME'] ?? "";
 
@@ -183,6 +169,8 @@ class SimpleRouter
     }
 
     if(!$run){
+      header("HTTP/1.0 404 Not Found");
+
       if(self::$file404 !== ""){
         include self::$file404;
       }
